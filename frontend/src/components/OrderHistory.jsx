@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Link } from 'react-router-dom';
 
 const OrderHistory = ({ token }) => {
   const [orders, setOrders] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get('/api/orders/', {
+    api.get('/api/order/history/', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(response => setOrders(response.data))
-      .catch(error => console.error('Error fetching orders:', error));
+      .catch(error => {
+        console.error('Error fetching orders:', error);
+        setError('Failed to load orders. Please try again.');
+      });
   }, [token]);
+
+  if (error) return <div className="container mx-auto p-4 text-red-500">{error}</div>;
 
   return (
     <div className="container mx-auto p-4">
@@ -23,7 +29,7 @@ const OrderHistory = ({ token }) => {
           {orders.map(order => (
             <li key={order.id} className="mb-2">
               <div className="flex justify-between">
-                <span>Order #{order.id} - ${order.total}</span>
+                <span>Order #{order.id} - ${order.total_amount}</span>
                 <Link to={`/invoice/${order.id}`} className="text-indigo-600">
                   View Invoice
                 </Link>

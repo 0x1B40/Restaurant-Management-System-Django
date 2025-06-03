@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import RegisterView, LoginView, MenuItemListView, OrderCreateView, OrderHistoryView, AdminOrderListView, AdminOrderUpdateView, InvoiceView
+from .views import (
+    RegisterView, LoginView, MenuItemListView, OrderCreateView, OrderHistoryView,
+    AdminOrderListView, AdminOrderUpdateView, InvoiceView, MenuItemCreateView
+)
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -10,4 +13,5 @@ urlpatterns = [
     path('admin/orders/', AdminOrderListView.as_view(), name='admin-orders'),
     path('admin/orders/<int:pk>/', AdminOrderUpdateView.as_view(), name='admin-order-update'),
     path('invoice/<int:order_id>/', InvoiceView.as_view(), name='invoice'),
+    path('admin/menu-items/', MenuItemCreateView.as_view(), name='menu-item-create'),
 ]

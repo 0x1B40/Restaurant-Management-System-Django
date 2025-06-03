@@ -1,29 +1,34 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { useHistory } from 'react-router-dom';
 
 const Login = ({ setToken, setUser }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
   const history = useHistory();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/login/', { username, password });
+      console.log('Sending login request:', { username, password });
+      const response = await api.post('/api/login/', { username, password });
+      console.log('Login response:', response.data);
       localStorage.setItem('token', response.data.access);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       setToken(response.data.access);
       setUser(response.data.user);
       history.push('/menu');
     } catch (error) {
-      alert(error.response?.data?.error || 'Login failed');
+      console.error('Login error:', error.response?.data, error.response?.status);
+      setError(error.response?.data?.error || 'Login failed. Please check your credentials.');
     }
   };
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Login</h1>
+      {error && <div className="text-red-500 mb-4">{error}</div>}
       <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-white p-6 rounded shadow">
         <input
           type="text"

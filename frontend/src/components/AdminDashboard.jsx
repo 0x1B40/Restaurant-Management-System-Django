@@ -1,30 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 const AdminDashboard = ({ token }) => {
   const [orders, setOrders] = useState([]);
+  const [error, setError] = useState(null);
   const [newItem, setNewItem] = useState({ name: '', description: '', price: '', category: '', image_url: '' });
 
   useEffect(() => {
-    axios.get('/api/admin/orders/', {
+    api.get('/api/admin/orders/', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(response => setOrders(response.data))
-      .catch(error => console.error('Error fetching orders:', error));
+      .catch(error => {
+        console.error('Error fetching orders:', error);
+        setError('Failed to load orders. Please try again.');
+      });
   }, [token]);
 
   const handleAddItem = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/admin/menu-items/', newItem, {
+      await api.post('/api/admin/menu-items/', { ...newItem, price: parseFloat(newItem.price) }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      alert('Item added');
+      alert('Item added successfully');
       setNewItem({ name: '', description: '', price: '', category: '', image_url: '' });
     } catch (error) {
+      console.error('Error adding item:', error);
       alert('Failed to add item');
     }
   };
+
+  if (error) return <div className="container mx-auto p-4 text-red-500">{error}</div>;
 
   return (
     <div className="container mx-auto p-4">
@@ -35,7 +42,7 @@ const AdminDashboard = ({ token }) => {
       ) : (
         <ul className="bg-white p-4 rounded shadow mb-6">
           {orders.map(order => (
-            <li key={order.id} className="mb-2">Order #{order.id} - ${order.total}</li>
+            <li key={order.id} className="mb-2">Order #{order.id} - ${order.total_amount}</li>
           ))}
         </ul>
       )}

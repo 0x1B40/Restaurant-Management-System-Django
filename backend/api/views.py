@@ -10,13 +10,20 @@ from django.contrib.auth import authenticate
 
 class RegisterView(APIView):
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            user.set_password(request.data['password'])
-            user.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        username = request.data.get('username')
+        password = request.data.get('password')
+        email = request.data.get('email', '')  # Optional email
+        if not username or not password:
+            return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.create_user(username=username, password=password, email=email)
+        serializer = UserSerializer(user)
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'user': serializer.data
+        }, status=status.HTTP_201_CREATED)
 
 class LoginView(APIView):
     def post(self, request):
@@ -36,9 +43,17 @@ class MenuItemListView(APIView):
         serializer = MenuItemSerializer(menu_items, many=True)
         return Response(serializer.data)
 
+class MenuItemCreateView(APIView):
+    permission_classes = [IsAdminUser]
+    def post(self, request):
+        serializer = MenuItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class OrderCreateView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
         serializer = OrderSerializer(data=request.data)
         if serializer.is_valid():
@@ -48,7 +63,6 @@ class OrderCreateView(APIView):
 
 class OrderHistoryView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request):
         orders = Order.objects.filter(user=request.user)
         serializer = OrderSerializer(orders, many=True)
@@ -56,7 +70,6 @@ class OrderHistoryView(APIView):
 
 class AdminOrderListView(APIView):
     permission_classes = [IsAdminUser]
-
     def get(self, request):
         orders = Order.objects.all()
         serializer = OrderSerializer(orders, many=True)
@@ -64,7 +77,6 @@ class AdminOrderListView(APIView):
 
 class AdminOrderUpdateView(APIView):
     permission_classes = [IsAdminUser]
-
     def put(self, request, pk):
         order = Order.objects.get(pk=pk)
         serializer = OrderSerializer(order, data=request.data, partial=True)
@@ -75,7 +87,6 @@ class AdminOrderUpdateView(APIView):
 
 class InvoiceView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request, order_id):
         order = Order.objects.get(id=order_id, user=request.user)
         invoice, created = Invoice.objects.get_or_create(order=order, total_amount=order.total_amount)

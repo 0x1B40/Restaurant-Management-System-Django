@@ -1,5 +1,5 @@
 import React from 'react';
-import axios from 'axios';
+import api from '../api';
 import { useHistory } from 'react-router-dom';
 
 const Cart = ({ cart, setCart, token }) => {
@@ -12,15 +12,19 @@ const Cart = ({ cart, setCart, token }) => {
 
   const handleOrder = async () => {
     try {
-      await axios.post(
-        '/api/orders/',
-        { items: cart },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const items = cart.map(item => ({
+        menu_item: item.id,
+        quantity: 1,
+        price: item.price,
+      }));
+      await api.post('/api/order/', { items }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setCart([]);
       history.push('/orders');
     } catch (error) {
-      alert('Order failed');
+      console.error('Error placing order:', error);
+      alert('Order failed. Please try again.');
     }
   };
 

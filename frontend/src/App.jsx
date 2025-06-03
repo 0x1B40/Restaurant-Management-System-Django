@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
-import Login from './components/Login';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Switch, Link, Redirect } from 'react-router-dom';
+import Login from './components/login';
 import Register from './components/Register';
-import Menu from './components/Menu';
-import Cart from './components/Cart';
+import Menu from './components/menu';
+import Cart from './components/cart';
 import OrderHistory from './components/OrderHistory';
 import AdminDashboard from './components/AdminDashboard';
 import Invoice from './components/Invoice';
@@ -11,11 +11,16 @@ import Invoice from './components/Invoice';
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(JSON.parse(localStorage.getItem('cart')) || []);
+
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('cart');
     setToken('');
     setUser(null);
     setCart([]);
@@ -53,22 +58,22 @@ const App = () => {
             <Register setToken={setToken} setUser={setUser} />
           </Route>
           <Route path="/menu">
-            <Menu cart={cart} setCart={setCart} token={token} />
+            {token ? <Menu cart={cart} setCart={setCart} token={token} /> : <Redirect to="/login" />}
           </Route>
           <Route path="/cart">
-            <Cart cart={cart} setCart={setCart} token={token} />
+            {token ? <Cart cart={cart} setCart={setCart} token={token} /> : <Redirect to="/login" />}
           </Route>
           <Route path="/orders">
-            <OrderHistory token={token} />
+            {token ? <OrderHistory token={token} /> : <Redirect to="/login" />}
           </Route>
           <Route path="/admin">
-            <AdminDashboard token={token} />
+            {token && user?.is_staff ? <AdminDashboard token={token} /> : <Redirect to="/login" />}
           </Route>
           <Route path="/invoice/:orderId">
-            <Invoice token={token} />
+            {token ? <Invoice token={token} /> : <Redirect to="/login" />}
           </Route>
           <Route path="/">
-            <Menu cart={cart} setCart={setCart} token={token} />
+            {token ? <Menu cart={cart} setCart={setCart} token={token} /> : <Redirect to="/login" />}
           </Route>
         </Switch>
       </div>
